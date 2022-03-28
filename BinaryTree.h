@@ -1,125 +1,178 @@
 #pragma once
+#include <string>
+#include <iostream>
+#include <fstream>
+
+#define LOX printf("%d\n", __LINE__);
 
 
 namespace iLab
-{
-	template <class T> class BinaryTree;
+{	
+	using std::string;
+	using std::cout;
+	using std::endl;
+
+	template <class T> class Tree;
 
 	template <class T>
-	class Node
+	class Node_t
 	{
-		friend BinaryTree<T>;
+		friend Tree<T>;
 	public:
-		Node();
-		Node(const T& data);
-		Node(const Node& node);
-		~Node();
+		Node_t();
+		Node_t(const T& _data);
+		~Node_t();
 
-		Node<T>& operator=(const Node<T>& node);
+		Node_t<T>& operator=(Node_t<T>& node);
+		friend std::ostream& operator<<(std::ostream const& stream, const Node_t<T>& node);
+
+		void GraphDump(string filename = "dump");
 
 	private:
-		T __data__;
-		BinaryTree<T>* __left__;
-		BinaryTree<T>* __right__;
+		T data;
+
+		Node_t* left;
+		Node_t* rigth;
+
 	};
 
+
 	template <class T>
-	Node<T>::Node()
+	Node_t<T>::Node_t()
 	{
-		__left__ = nullptr;
-		__right__ = nullptr;
+		data = 0;
+		
+		left = nullptr;
+		rigth = nullptr;
 	}
 
 	template<class T>
-	Node<T>::Node(const T& data)
+	Node_t<T>::Node_t(const T& _data)
 	{
-		__data__ = data;
-		__left__ = nullptr;
-		__right__ = nullptr;
-	}
-
-	template<class T>
-	Node<T>::Node(const Node& node)
-	{
-		__data__ = *node.__data__;
-		__left__  = node.__left__;
-		__right__ = node.__right__;
+		data = _data;
+		left = nullptr;
+		rigth = nullptr;
 	}
 
 	template <class T>
-	Node<T>::~Node()
+	Node_t<T>::~Node_t()
 	{
 	}
 
 	template<class T>
-	Node<T>& Node<T>::operator=(const Node<T>& node)
+	Node_t<T>& Node_t<T>::operator=(Node_t<T>& node)
 	{
-		__data__  = node.__data__;
-		__left__  = node.__left__;
-		__right__ = node.__right__;
+		data = node.data;
+		left = node.left;
+		rigth = node.rigth;
 
 		return *this;
 	}
+
+	template <class T>
+	std::ostream& operator<<(std::ostream const& stream, const Node_t<T>& node)
+	{
+		stream << node.data;
+		return stream;
+	}
+
 	
-	//---------------------------------------------------------------------------------------------
+	//----------------------------------------------------------------------------
 	
 	template <class T>
-	class BinaryTree
+	class Tree
 	{
-		friend Node<T>;
 	public:
-		BinaryTree();
-		~BinaryTree();
+		Tree();
+		~Tree();
 
 		int Incert(const T& data);
 
+		void GraphDump(string filename = "dump");
+
 	private:
-		size_t __size__;
-		unsigned __lvl__;
-		Node<T>* __root__;
+		Node_t<T>* root;
+		size_t size;
+
+		void CreateNode(const T& data, Node_t<T>*& node);
+		void DumpNode(std::ofstream& dumpfile, const Node_t<T>* node, int number_of_node = 0);
 	};
 
 
 	template <class T>
-	BinaryTree<T>::BinaryTree()
+	Tree<T>::Tree()
 	{
-		__size__ = 0;
-		__lvl__  = 0;
-		__root__ = new Node<T>;
+		root = new Node_t<T>;
+		size = 0;
 	}
 
 	template <class T>
-	BinaryTree<T>::~BinaryTree()
+	Tree<T>::~Tree()
 	{
-		delete __root__;
 	}
 
 	template <class T>
-	int BinaryTree<T>::Incert(const T& data)
+	int Tree<T>::Incert(const T& data)
 	{
-		Node<T>* node = __root__;
-		
-		while (node->__left__ != nullptr or node->__right__ != nullptr)
+		Node_t<T>* node = root;
+
+		if (size == 0)
 		{
-			if (data < node->__data__)
-				node = node->__left__->__root__;
+			root->data = data;
+		}
+		else
+		{
+			Node_t<T>* father = nullptr;
+			while (node != nullptr)
+			{
+				if (data < node->data)
+				{
+					father = node;
+					node = node->left;
+				}
+				else if (data > node->data)
+				{
+					father = node;
+					node = node->rigth;
+				}
+				else return -1;
+			}
+
+			if (data < father->data)
+				CreateNode(data, father->left);
 			else
-				node = node->__right__->__root__;
+				CreateNode(data, father->rigth);
 		}
+		++size;
+		return 0;
+	}
 
-		Node<T> element(data);
-		if (data < node->__data__)
-		{
-			node->__left__ = element;
-			return 0;
-		}
-		else if (data > node->__data__)
-		{
-			node->__right__ = element;
-			return 0;
-		}
-		return -1;
-		
+	template<class T>
+	void Tree<T>::CreateNode(const T& data, Node_t<T>*& node)
+	{
+		Node_t<T>* new_node = new Node_t<T>;
+		new_node->data = data;
+		node = new_node;
+	}
+
+	template<class T>
+	void Tree<T>::DumpNode(std::ofstream& dumpfile, const Node_t<T>* node, int number_of_node)
+	{
+		dumpfile << "Node" << number_of_node << "[shape=\"octagon\", label=" << node->data << "\"];\n";
+
+		if (node->left) DumpNode(dumpfile, node->left, number_of_node + 1);
+		if (node->rigth) DumpNode(dumpfile, node->rigth, number_of_node + 2);
+	}
+
+
+	template<class T>
+	void iLab::Tree<T>::GraphDump(string filename)
+	{
+		std::ofstream dumpfile;
+		dumpfile.open(filename);
+
+		dumpfile << "digraph " << filename << "{\n";
+		DumpNode(dumpfile, root);
 	}
 
 }
