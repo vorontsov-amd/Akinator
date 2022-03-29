@@ -1,10 +1,11 @@
 #pragma once
+#pragma warning(disable : 4996)
 #include <string>
 #include <iostream>
 #include <fstream>
 
 #define LOX printf("%d\n", __LINE__);
-
+extern std::string tab(int n);
 
 namespace iLab
 {	
@@ -21,15 +22,16 @@ namespace iLab
 	public:
 		Node_t();
 		Node_t(const T& _data);
+		//Node_t(Node_t<T>& node);
 		~Node_t();
 
-		Node_t<T>& operator=(Node_t<T>& node);
+		//Node_t<T>& operator=(const Node_t<T>& node);
 		friend std::ostream& operator<<(std::ostream const& stream, const Node_t<T>& node);
-
-		void GraphDump(string filename = "dump");
 
 	private:
 		T data;
+
+		Node_t* parrent;
 
 		Node_t* left;
 		Node_t* rigth;
@@ -40,8 +42,7 @@ namespace iLab
 	template <class T>
 	Node_t<T>::Node_t()
 	{
-		data = 0;
-		
+		parrent = nullptr;
 		left = nullptr;
 		rigth = nullptr;
 	}
@@ -50,24 +51,35 @@ namespace iLab
 	Node_t<T>::Node_t(const T& _data)
 	{
 		data = _data;
+		parrent = nullptr;
 		left = nullptr;
 		rigth = nullptr;
 	}
+
+	//template<class T>
+	//Node_t<T>::Node_t(Node_t<T>& node)
+	//{
+	//	data = node.data;
+	//	parrent = node.parrent;
+	//	left = node.left;
+	//	rigth = node.rigth;
+	//}
 
 	template <class T>
 	Node_t<T>::~Node_t()
 	{
 	}
 
-	template<class T>
-	Node_t<T>& Node_t<T>::operator=(Node_t<T>& node)
-	{
-		data = node.data;
-		left = node.left;
-		rigth = node.rigth;
+	//template<class T>
+	//Node_t<T>& Node_t<T>::operator=(const Node_t<T>& node)
+	//{
+	//	data = node.data;
+	//	parrent = node.parrent;
+	//	left = node.left;
+	//	rigth = node.rigth;
 
-		return *this;
-	}
+	//	return *this;
+	//}
 
 	template <class T>
 	std::ostream& operator<<(std::ostream const& stream, const Node_t<T>& node)
@@ -84,19 +96,36 @@ namespace iLab
 	{
 	public:
 		Tree();
+		//Tree(Tree<T>& tree);
 		~Tree();
 
+		//Tree<T>& operator=(const Tree<T>& tree);
+
 		int Incert(const T& data);
+		int Delete(const T& data);
 
-		void GraphDump(string filename = "dump");
+		int Print();
+		int Scan(const char* filename = "DataBase");
+		void GraphDump(const char* filename = "dump");
 
-	private:
+	protected:
 		Node_t<T>* root;
 		size_t size;
 
-		void CreateNode(const T& data, Node_t<T>*& node);
-		void DumpNode(std::ofstream& dumpfile, const Node_t<T>* node, int number_of_node = 0);
+
+		void CreateNode(const T& data, Node_t<T>*& parrent, Node_t<T>*& node);
+		void DumpNode(std::ofstream& dumpfile, const Node_t<T>* node);
+
+		Node_t<T>* Find(Node_t<T>* root, const T& value);
+		void StabilizateLeftRoot(Node_t<T>* node);
+		void StabilizateRightRoot(Node_t<T>* node);
+
+		void Write(std::ofstream& file, Node_t<T>* node, int n);
+		void Read(std::ifstream& file, Node_t<T>*& node, Node_t<T>* parrent, T& element);
+
+		//void Free(Node_t<T>* tree);
 	};
+
 
 
 	template <class T>
@@ -106,10 +135,26 @@ namespace iLab
 		size = 0;
 	}
 
+	//template<class T>
+	//Tree<T>::Tree(Tree<T>& tree)
+	//{
+	//	*root = *tree.root;
+	//	size = tree.size;
+	//}
+
 	template <class T>
 	Tree<T>::~Tree()
 	{
+		//if (root) Free(root);
 	}
+
+	//template<class T>
+	//Tree<T>& Tree<T>::operator=(const Tree<T>& tree)
+	//{
+	//	root = tree.root;
+	//	size = tree.size;
+	//	return *this;
+	//}
 
 	template <class T>
 	int Tree<T>::Incert(const T& data)
@@ -122,57 +167,264 @@ namespace iLab
 		}
 		else
 		{
-			Node_t<T>* father = nullptr;
+			Node_t<T>* parrent = nullptr;
 			while (node != nullptr)
 			{
 				if (data < node->data)
 				{
-					father = node;
+					parrent = node;
 					node = node->left;
 				}
 				else if (data > node->data)
 				{
-					father = node;
+					parrent = node;
 					node = node->rigth;
 				}
 				else return -1;
 			}
 
-			if (data < father->data)
-				CreateNode(data, father->left);
+			if (data < parrent->data)
+				CreateNode(data, parrent, parrent->left);
 			else
-				CreateNode(data, father->rigth);
+				CreateNode(data, parrent, parrent->rigth);
 		}
 		++size;
 		return 0;
 	}
 
 	template<class T>
-	void Tree<T>::CreateNode(const T& data, Node_t<T>*& node)
+	int Tree<T>::Delete(const T& data)
+	{
+		Node_t<T>* node = Find(root, data);
+		
+		if (node = node->parrent->left)
+		{
+			StabilizateLeftRoot(node);
+		}
+
+		else if (node = node->parrent->rigth)
+		{
+			StabilizateRightRoot(node);
+		}
+
+		else return -1;
+
+		return 0;
+	}
+
+	template<class T>
+	void Tree<T>::StabilizateLeftRoot(Node_t<T>* node)
+	{
+		if (node->left != nullptr and node->rigth != nullptr)
+		{
+			node->parrent->left = node->rigth;
+			node->rigth->parrent = node->parrent;
+			Node_t<T>* root = node->rigth;
+			while (root->left != nullptr)
+			{
+				root = root->left;
+			}
+			root->left = node->left;
+			node->left->parrent = root;
+		}
+		else if (node->rigth != nullptr)
+		{
+			node->rigth->parrent = node->parrent;
+			node->parrent->left = node->rigth;
+		}
+		else
+		{
+			node->left->parrent = node->parrent;
+			node->parrent->left = node->left;
+		}
+		delete node;
+	}
+
+	template<class T>
+	void Tree<T>::StabilizateRightRoot(Node_t<T>* node)
+	{
+		if (node->left != nullptr and node->rigth != nullptr)
+		{
+			node->parrent->rigth = node->left;
+			node->left->parrent = node->parrent;
+			Node_t<T>* root = node->left;
+			while (root->rigth != nullptr)
+			{
+				root = root->rigth;
+			}
+			root->rigth = node->rigth;
+			node->rigth->parrent = root;
+		}
+		else if (node->rigth != nullptr)
+		{
+			node->rigth->parrent = node->parrent;
+			node->parrent->rigth = node->rigth;
+		}
+		else
+		{
+			node->left->parrent = node->parrent;
+			node->parrent->rigth = node->left;
+		}
+		delete node;
+	}
+
+	template<class T>
+	void Tree<T>::CreateNode(const T& data, Node_t<T>*& parrent, Node_t<T>*& node)
 	{
 		Node_t<T>* new_node = new Node_t<T>;
 		new_node->data = data;
+		new_node->parrent = parrent;
 		node = new_node;
 	}
 
 	template<class T>
-	void Tree<T>::DumpNode(std::ofstream& dumpfile, const Node_t<T>* node, int number_of_node)
+	void Tree<T>::DumpNode(std::ofstream& dumpfile, const Node_t<T>* node)
 	{
-		dumpfile << "Node" << number_of_node << "[shape=\"octagon\", label=" << node->data << "\"];\n";
+		dumpfile << "Node" << node << "[shape=\"record\", label=\"" << node->data << "\"];\n";
 
-		if (node->left) DumpNode(dumpfile, node->left, number_of_node + 1);
-		if (node->rigth) DumpNode(dumpfile, node->rigth, number_of_node + 2);
+		if (node->left)
+		{
+			DumpNode(dumpfile, node->left);
+			dumpfile << "Node" << node << "->" << "Node" << node->left << ";\n";
+		}
+		if (node->rigth)
+		{
+			DumpNode(dumpfile, node->rigth);
+			dumpfile << "Node" << node << "->" << "Node" << node->rigth << ";\n";
+		}
+	}
+
+	template<class T>
+	Node_t<T>* Tree<T>::Find(Node_t<T>* root, const T& value)
+	{
+		Node_t<T>* node = root;
+		while (node != nullptr)
+		{
+			if (node->data == value)
+				return node;
+			else if (node->data < value)
+				node = node->rigth;
+			else
+				node = node->left;
+		}
+		return nullptr;
 	}
 
 
 	template<class T>
-	void iLab::Tree<T>::GraphDump(string filename)
+	int Tree<T>::Print()
 	{
-		std::ofstream dumpfile;
-		dumpfile.open(filename);
+		std::ofstream out;
+		out.open("DataBase");
+		Write(out, root, 0);
+		out.close();
 
-		dumpfile << "digraph " << filename << "{\n";
-		DumpNode(dumpfile, root);
+		return 0;
 	}
 
+	template<class T>
+	int Tree<T>::Scan(const char* filename)
+	{
+		std::ifstream in;
+		in.open(filename);
+		T element;
+		Read(in, root, nullptr, element);
+		in.close();
+		
+		return 0;
+	}
+
+	template<class T>
+	void Tree<T>::Write(std::ofstream& file, Node_t<T>* node, int n)
+	{
+		file << tab(n) << "{ " << node->data << endl;
+		if (node->rigth) Write(file, node->rigth, n + 1);
+		if (node->left)  Write(file, node->left,  n + 1);
+		file << tab(n) << "}\n";
+
+	}
+
+	template<class T>
+	void Tree<T>::Read(std::ifstream& file, Node_t<T>*& node, Node_t<T>* parrent, T& element)
+	{
+		char test = 0;
+		file >> test;
+		if (test == '{')
+		{
+			file >> element;
+			CreateNode(element, parrent, node);
+			Read(file, node->rigth, node, element);
+			Read(file, node->left, node, element);
+		}
+		else if (test == '}')
+		{
+			file.putback(test);
+			return;
+		}
+		file >> test;
+	}
+
+	//template<class T>
+	//void Tree<T>::Free(Node_t<T>* tree)
+	//{
+	//	if (tree->left)  Free(tree->left);
+	//	if (tree->rigth) Free(tree->rigth);
+	//	if (tree)
+	//	{
+	//		delete tree;
+	//		tree = nullptr;
+	//	}
+	//}
+
+	template<class T>
+	void iLab::Tree<T>::GraphDump(const char* graphname)
+	{
+		size_t length = strlen(graphname) + 40;
+		char* command = new char[length] {};
+		strncpy(command, graphname, length);
+		strncat(command, ".dot", length);
+		
+		std::ofstream dumpfile;
+		dumpfile.open(command);
+
+		dumpfile << "digraph " << graphname << "{\n";
+		DumpNode(dumpfile, root);
+		dumpfile << "}";
+
+		dumpfile.close();
+
+		strncpy(command, "dot -Tpdf ", length);
+		strncat(command, graphname, length);
+		strncat(command, ".dot", length);
+		strncat(command, " -o ", length);
+		strncat(command, graphname, length);
+		strncat(command, ".pdf", length);
+		system(command);
+		delete[] command;
+	}
+
+
+
+
+	template <class T>
+	class SortTree: private Tree<T>
+	{
+	public:
+		SortTree();
+		~SortTree();
+
+	private:
+
+	};
+
+	template <class T>
+	SortTree<T>::SortTree()
+	{
+	}
+
+
+	template <class T>
+	SortTree<T>::~SortTree()
+	{
+	}
 }
