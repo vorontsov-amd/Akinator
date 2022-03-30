@@ -15,26 +15,3 @@ std::string tab(int n)
 	}
 }
 
-
-
-namespace iLab
-{
-	using std::string;
-	class Akinaor: private Tree<string>
-	{
-	public:
-		Akinaor();
-		~Akinaor();
-
-	private:
-
-	};
-
-	Akinaor::Akinaor()
-	{
-	}
-
-	Akinaor::~Akinaor()
-	{
-	}
-}

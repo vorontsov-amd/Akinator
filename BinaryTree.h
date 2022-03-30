@@ -14,19 +14,23 @@ namespace iLab
 	using std::endl;
 
 	template <class T> class Tree;
+	class Akinator;
 
 	template <class T>
 	class Node_t
 	{
 		friend Tree<T>;
+		friend Akinator;
 	public:
 		Node_t();
 		Node_t(const T& _data);
-		//Node_t(Node_t<T>& node);
+		Node_t(Node_t<T>& node);
 		~Node_t();
 
-		//Node_t<T>& operator=(const Node_t<T>& node);
-		friend std::ostream& operator<<(std::ostream const& stream, const Node_t<T>& node);
+		Node_t<T>& operator=(const Node_t<T>& node);
+
+		template<class T>
+		friend std::ostream& operator<<(std::ostream& stream, Node_t<T> const& node);
 
 	private:
 		T data;
@@ -56,37 +60,39 @@ namespace iLab
 		rigth = nullptr;
 	}
 
-	//template<class T>
-	//Node_t<T>::Node_t(Node_t<T>& node)
-	//{
-	//	data = node.data;
-	//	parrent = node.parrent;
-	//	left = node.left;
-	//	rigth = node.rigth;
-	//}
+	template<class T>
+	Node_t<T>::Node_t(Node_t<T>& node)
+	{
+		data = node.data;
+		parrent = node.parrent;
+		left = node.left;
+		rigth = node.rigth;
+	}
 
 	template <class T>
 	Node_t<T>::~Node_t()
 	{
 	}
 
-	//template<class T>
-	//Node_t<T>& Node_t<T>::operator=(const Node_t<T>& node)
-	//{
-	//	data = node.data;
-	//	parrent = node.parrent;
-	//	left = node.left;
-	//	rigth = node.rigth;
-
-	//	return *this;
-	//}
-
-	template <class T>
-	std::ostream& operator<<(std::ostream const& stream, const Node_t<T>& node)
+	template<class T>
+	Node_t<T>& Node_t<T>::operator=(const Node_t<T>& node)
 	{
-		stream << node.data;
-		return stream;
+		data = node.data;
+		return *this;
 	}
+
+	template<class T>
+	std::ostream& operator<<(std::ostream& stream, Node_t<T> const& node)
+	{
+		return stream << node.data;
+	}
+
+	// template<class T>
+	// std::ostream& operator<<(std::ostream& stream, Node_t<T> const& node)
+	// {
+	// 	return stream << node.data;
+	// }
+
 
 	
 	//----------------------------------------------------------------------------
@@ -117,9 +123,11 @@ namespace iLab
 		void DumpNode(std::ofstream& dumpfile, const Node_t<T>* node);
 
 		Node_t<T>* Find(Node_t<T>* root, const T& value);
+	private:
 		void StabilizateLeftRoot(Node_t<T>* node);
 		void StabilizateRightRoot(Node_t<T>* node);
 
+	protected:
 		void Write(std::ofstream& file, Node_t<T>* node, int n);
 		void Read(std::ifstream& file, Node_t<T>*& node, Node_t<T>* parrent, T& element);
 
@@ -379,11 +387,11 @@ namespace iLab
 	template<class T>
 	void iLab::Tree<T>::GraphDump(const char* graphname)
 	{
-		size_t length = strlen(graphname) + 40;
+		size_t length = strlen(graphname) + 50;
 		char* command = new char[length] {};
 		strncpy(command, graphname, length);
 		strncat(command, ".dot", length);
-		
+
 		std::ofstream dumpfile;
 		dumpfile.open(command);
 
@@ -393,38 +401,21 @@ namespace iLab
 
 		dumpfile.close();
 
+		strncpy(command, "iconv -f cp1251 -t utf-8 ", length);
+		strncat(command, graphname, length);
+		strncat(command, ".dot > ", length);
+		strncat(command, graphname, length);
+		strncat(command, "-utf8.dot", length);
+		system(command);
+
 		strncpy(command, "dot -Tpdf ", length);
 		strncat(command, graphname, length);
-		strncat(command, ".dot", length);
+		strncat(command, "-utf8.dot", length);
 		strncat(command, " -o ", length);
 		strncat(command, graphname, length);
 		strncat(command, ".pdf", length);
+
 		system(command);
 		delete[] command;
-	}
-
-
-
-
-	template <class T>
-	class SortTree: private Tree<T>
-	{
-	public:
-		SortTree();
-		~SortTree();
-
-	private:
-
-	};
-
-	template <class T>
-	SortTree<T>::SortTree()
-	{
-	}
-
-
-	template <class T>
-	SortTree<T>::~SortTree()
-	{
 	}
 }
