@@ -3,6 +3,9 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
 
 #define LOX printf("%d\n", __LINE__);
 extern std::string tab(int n);
@@ -28,9 +31,21 @@ namespace iLab
 		~Node_t();
 
 		Node_t<T>& operator=(const Node_t<T>& node);
+		operator T()
+		{
+			return data;
+		}
 
-		template<class T>
-		friend std::ostream& operator<<(std::ostream& stream, Node_t<T> const& node);
+	friend inline bool operator==(const Node_t<T>& node1, const Node_t<T>& node2)
+	{
+		return node1.data == node2.data;
+	}
+
+	friend std::ostream& operator<<(std::ostream& stream, Node_t<T> const& node)
+	{
+		return stream << node.data;
+	}
+
 
 	private:
 		T data;
@@ -79,12 +94,6 @@ namespace iLab
 	{
 		data = node.data;
 		return *this;
-	}
-
-	template<class T>
-	std::ostream& operator<<(std::ostream& stream, Node_t<T> const& node)
-	{
-		return stream << node.data;
 	}
 
 	// template<class T>

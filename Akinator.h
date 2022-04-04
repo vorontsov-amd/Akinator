@@ -1,5 +1,5 @@
 #pragma once
-#include <Windows.h>
+#include "BinaryTree.h"
 enum class script
 {
 	game,
@@ -14,11 +14,17 @@ enum class answer
 	parrent,
 };
 
+using std::string;
+
 script Greeting();
 void ClearBuffer();
 void Game();
 void AddNewPerson(iLab::Akinator& aki);
-
+void LoadGame(script scr);
+void Settings();
+char* StrToCh(string& str);
+char* CreateDiffStr(string& new_person, string person);
+char* CreateShowStr(string person);
 
 namespace iLab
 {
@@ -54,6 +60,8 @@ namespace iLab
 
 	}
 
+
+
 	int Akinator::Scan(const char* filename)
 	{
 		int ret = Tree::Scan(filename);
@@ -86,11 +94,10 @@ namespace iLab
 	}
 
 	void Akinator::Incert(const string& new_person, const string& different)
-	{
+	{		
 		string current_person = current_node->data;
 		current_node->data = different;
 		CreateNode(new_person, current_node, current_node->rigth);
 		CreateNode(current_person, current_node, current_node->left);
 	}
-
 }
